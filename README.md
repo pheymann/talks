@@ -1,2 +1,2 @@
-# talks
-Collection of conference and meetup talks I gave
+# Conference and Meetup talks
+I will put all my conference and meetup talks into this repository.
