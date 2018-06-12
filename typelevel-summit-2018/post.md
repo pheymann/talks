@@ -1,11 +1,10 @@
 # Typedapi or how to derive your clients and servers from types
+In this blog post I will show you how to leverage Scala's typesystem to derive a client function from a single type. This is also the story of how I started to work on [Typedapi](https://github.com/pheymann/typedapi) which is basically the attempt to bring Haskell's [Servant](https://github.com/servant/servant) to Scala.
 
+## Servant in a nutshell and how it began
+Everyone not knowing Servant, it is library which lets you define your web apis as types and derives the client and server functions from it. When I saw it the first time while working on a ped project I immediately loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients.
 
-I am fantastically bad at learning new programming concepts just by reading books and doing the exercises. What I usually do is try to solve a problem I am interested in and learn on-the-fly. And with interesting I mean it should be challenging and it should solve a pain that at least I have. The thing is, coming up with a project idea which fulfills these criteria is quite hard. But as it often is with thinks you are looking for but cannot find, at the time you stop searching they just reveal themselves.
-
-This was also the case when I started to take a deep dive into Scala's type-level computation realm. I was looking into this concept for a while when a colleague of mine introduced [Servant](https://github.com/servant/servant) while we were spending some time on a toy-project. For everyone not knowing it, Servant is a Haskell library which lets you define your web apis as types and derives the client and server functions from it. I saw it and loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients. After a while playing with Servant I realized that it would make a perfect candidate for learning how to do computations with types in Scala.
-
-But I just wanted to start with a single feature to not overwhelm myself and abandoned the project after a couple of hours. Therefore, I set out to make Scala able to derive a client function from a single api type and this will also be the topic of the following blog post.
+After searching for viable alternatives in Scala without success I decided to take a shot at it. But I just wanted to start with a single feature to not overwhelm myself and abandoned the project after a couple of hours. Therefore, I set out to make Scala able to derive a client function from a single api type. How hard can it be?
 
 ## Derive a client function from a type. How hard can it be?
 Short answer: it takes some nights and a lot of cursing. But let's start at the beginning. First of all, I will introduce a small example we will use to ease the understanding later on. Consider the following api:
