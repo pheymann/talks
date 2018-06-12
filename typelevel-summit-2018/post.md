@@ -1,16 +1,14 @@
 # Typedapi or how to derive your clients and servers from types
-In this blog post I will show you how to leverage Scala's typesystem to derive a client function from a single type. This is also the story of how I started to work on [Typedapi](https://github.com/pheymann/typedapi) which is basically the attempt to bring Haskell's [Servant](https://github.com/servant/servant) to Scala.
+In this blog, post I will show you how to leverage Scala's type system to derive an HTTP client function from a single type. This will also be the story of how I started to work on [Typedapi](https://github.com/pheymann/typedapi) which is basically the attempt to bring Haskell's [Servant](https://github.com/servant/servant) to Scala.
 
 ## Servant in a nutshell and how it began
-Everyone not knowing Servant, it is library which lets you define your web apis as types and derives the client and server functions from it. When I saw it the first time while working on a ped project I immediately loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients.
-
-After searching for viable alternatives in Scala without success I decided to take a shot at it. But I just wanted to start with a single feature to not overwhelm myself and abandoned the project after a couple of hours. Therefore, I set out to make Scala able to derive a client function from a single api type. How hard can it be?
+For everyone not knowing Servant, it is a library which lets you define your web apis as types and derives the client and server functions from it. When I saw it for the first time while working on a ped project I immediately loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients. And as I couldn't find any viable alternative in Scala I decided to try it on my own. But I just wanted to start with a single feature to not overwhelm myself and abandoned the project after a short time. Therefore, I set out to make Scala able to derive a client function from a single api type.
 
 ## Derive a client function from a type. How hard can it be?
-Short answer: it takes some nights and a lot of cursing. But let's start at the beginning. First of all, I will introduce a small example we will use to ease the understanding later on. Consider the following api:
+Let's start with an example we will use later on to ease understanding. Consider the following api:
 
 ```
-GET /users/:name?minAge=[age] -> List[User]
+GET /users/:name?minAge=:age -> List[User]
 ```
 
 It only consists of a single endpoint which returns a list of `Users`:
@@ -26,7 +24,7 @@ with a given `name: String`. Furthermore, you filter the resulting users by thei
 ```
 
 ### Represent the api as a type
-Next question: how do you represent the above api as a type in Scala? I think we can divide and conquer here. We separate the api into its different building blocks and try to find type-level representations for each of them. After that, we merge all the stuff together.
+Question: how do you represent the above api as a type in Scala? I think we can divide and conquer here. We separate the api into its different building blocks and try to find type-level representations for each of them. After that, we merge all the stuff together.
 
 When we take a closer look at our endpoint we see that it consists of:
   * path elements identifying an endpoint: `/users`
@@ -42,7 +40,7 @@ We start with our path element. If we would work with Dotty or Typelevel-Scala w
 type Path = "users"
 ```
 
-But as we want to stay in Vanilla Scala (oh, didn't I mention that before) this isn't an option. We have to use the one tool probably every developer has to use when it comes to working on the type-level in Scala called [shapeless](https://github.com/milessabine/shapeless). It comes with a nifty class called [Witness](https://github.com/milessabin/shapeless/blob/master/core/src/main/scala/shapeless/singletons.scala#L31) which generates a witness type from a constant value like `Strings` or `Symbols`.
+But as we want to stay in Vanilla Scala this isn't an option. We have to use the one tool probably every developer has to use when it comes to working on the type-level called [shapeless](https://github.com/milessabine/shapeless). It has this nifty class [Witness](https://github.com/milessabin/shapeless/blob/master/core/src/main/scala/shapeless/singletons.scala#L31) which generates a witness type from a constant value like `Strings` or `Symbols`.
 
 ```Scala
 import shapeless.Witness
@@ -303,8 +301,13 @@ val get = derive(Api)
 get("joe", 42).run[IO](Client[IO]) // IO[List[User]]
 ```
 
-## Next level - Typedapi
-Now that we are able to derive a single client function from a type we should also be able to do the same for a collection of api types. And if we are already on it, let's add server-side support. Or ... you just use [typedapi](https://github.com/pheymann/typedapi). It already comes with the following features:
+## Conclusion
+When you take a closer look at the code above you will see that we were able to move most of the heavy lifting to the compiler or shapeless therefore reducing our code to a relatively small set of "simple" type classes. And when literal types are in thing in Scala we can also remove most of the boilerplate necessary to create our api types. 
+
+This, again, shows me how powerful Scalas type system is and how much you can gain when you embrace it.
+
+## Next Step - Typedapi
+Now that we are able to derive a single client function from a type we should also be able to do the same for a collection of api types. And if we are already on it, let's add server-side support. Or ... you just use [Typedapi](https://github.com/pheymann/typedapi). It already comes with the following features:
  * client function derivation
  * server function derivation
  * single and multi api type handling
