@@ -26,7 +26,7 @@ with a given `name: String`. Furthermore, you filter the resulting users by thei
 ```
 
 ### Represent the api as a type
-Question: how do you represent the above api as a type in Scala? I think we can divide and conquer here. We separate the api into its different building blocks and try to find type-level representations for each of them. After that, we merge all the stuff together.
+Question: how do you represent the above api as a type in Scala? I think the best way is to break it apart and try to find type-level representations for each element. After that, we "just" merge them together.
 
 When we take a closer look at our endpoint we see that it consists of:
   * path elements identifying an endpoint: `/users`
@@ -42,7 +42,7 @@ We start with our path element. If we would work with Dotty or Typelevel-Scala w
 type Path = "users"
 ```
 
-But as we want to stay in Vanilla Scala this isn't an option. We have to use the one tool probably every developer has to use when it comes to working on the type-level called [shapeless](https://github.com/milessabine/shapeless). It has this nifty class [Witness](https://github.com/milessabin/shapeless/blob/master/core/src/main/scala/shapeless/singletons.scala#L31) which generates a witness type from a constant value like `Strings` or `Symbols`.
+But as we want to stay in Vanilla Scala this isn't an option. We have to use the one tool probably every developer has to use when it comes to working on the type-level called [shapeless](https://github.com/milessabine/shapeless). It has this nifty class [Witness](https://github.com/milessabin/shapeless/blob/master/core/src/main/scala/shapeless/singletons.scala#L31) which generates a witness type from a literal like `Strings` or `Symbols`.
 
 ```Scala
 import shapeless.Witness
@@ -60,7 +60,7 @@ sealed trait Path[P]
 type users = Path[usersW.T]
 ```
 
-That's it. That is the basic concept of how we can describe our apis as types. We just reuse this concept now for the remaining element like the segment.
+That's it. That is the basic concept of how we can describe our apis as types. We just reuse this concept now for the remaining elements like the segment.
 
 
 ```Scala
@@ -118,7 +118,7 @@ val Root = PathList[HNil]()
   * Same is true for `QueryList`.
   * The last step is to merge all these `HLists` types into a single one. Shapeless comes again with a handy type class called `Prepend` which provides us with the necessary functionality. Two `HList` types go in, a single type comes out. And again, we use a type carrier here to store the api type.
 
-Whoho, we did it. One thing we can check on our todo list. Next step is to derive an actual client function from it.
+Whoho, we did it. One thing we can mark as done on our todo list. Next step is to derive an actual client function from it.
 
 ### Clients from types
 So far we have a type carrier with our api:
@@ -127,7 +127,7 @@ So far we have a type carrier with our api:
 ApiTypeCarrier[Get[List[User]] :: Query[minAgeW.T, Int] :: Segment[nameW.T, String] :: usersW.T :: HNil]
 ```
 
-Now we need to transform that into a function call `(name: String, minAge: Int) => F[List[User]]`. So what we need is the following:
+Now we want to transform that into a function call `(name: String, minAge: Int) => F[List[User]]`. So what we need is the following:
   * the types of our expected input
   * the output type
   * the path to the endpoint we want to call
@@ -258,7 +258,7 @@ def derive[Api <: HList, El <: HList, KIn <: HList, VIn <: HList, M, Out, F[_], 
             request: ApiRequest[M, F, C, Out]): VIn => F[Out] = vin => request(builder.apply(vin, List.newBuilder, Map.empty), client)
 ```
 
-This first approach gives us the desired function but has a major drawback. You have to fix `F[_]` somehow and the only way is so far is to set it explicitly. But by doing that you are forced to provide definitions for all the type parameters. Furthermore, this function isn't really convenient. To use it you have to create and pass an `HList` and as we said before, we don't want to expose something like that.
+This first approach gives us the desired function but has a major drawback. You have to fix `F[_]` somehow and the only way is to set it explicitly. But by doing that you are forced to provide definitions for all the type parameters. Furthermore, this function isn't really convenient. To use it you have to create and pass an `HList` and as we said before, we don't want to expose something like that.
 
 To fix the first problem we simply add a helper class which moves the step of defining the higher kind `F[_]` to a separate function call:
 
