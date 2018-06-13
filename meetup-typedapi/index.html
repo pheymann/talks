@@ -1,0 +1,430 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/white.css" id="theme">
+    <link rel="stylesheet" href="css/presentation.css">
+    
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/vscode.css">
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <section>
+            <h2>Typedapi</h2>
+            <h3>Define your API on the type-level</h3>
+            
+            <aside class="notes">
+              Hi, who here knows Servant?
+	    </aside>
+          </section>
+          <section>
+            <img alt="servant logo" src="img/servant.png" height="266" width="200"/>
+            <br><br>
+            https://github.com/haskell-servant/servant
+
+            <aside class="notes">
+              For everyone not knowing it, it is a Haskell library which lets you define web apis as types and derives client and server functions from it.
+
+              I saw it the first time a couple of weeks ago when a colleague of mine introduced it to me in a toy project we were working on. I was immediately hooked. Servant reduces the code you write to define clients or server to a mere type, it adds extra type safety and you can use your api types as contracts between a server and its clients.
+
+              After a while an idea formed itself in my head: It would be a nice pet project to implement the same functionality in Scala. But what is the first thing you do before opening such a time sink?
+	    </aside>
+          </section>
+          <section>
+            <img alt="google search" src="img/google.png" height="350" width="800"/>
+
+            <aside class="notes">
+              Right, you fire up your favorite browser and start an extensive 5min search for solutions already available.
+
+              Fortunately, I couldn't find a promising project on the internet which basically meant -> Cancel my weekend plans I have a new item on my agenda.
+	    </aside>
+          </section>
+          <section>
+            <img alt="Servant to scala" src="img/haskell-to-scala.png" height="350" width="800"/>
+
+            <aside class="notes">
+              Bringing Servant to Scala.
+
+              But I wanted to make baby steps, so I started with the goal of deriving a client function from a single api type.
+
+              And this will also be the topic of my talk.
+	    </aside>
+          </section>
+        </section>
+        <section>
+          <section>
+            <img alt="myself" src="img/myself.svg"/>
+
+            <aside class="notes">
+              I am Paul Heymann, Data Engineer at the social network XING holding LinkedIn at bay (at least in Germany). And I am your guide for the next 12 minutes.
+	    </aside>
+          </section>
+          <section>
+            <h4>let's have an example</h4>
+
+            <pre><code class="scala" data-trim>
+              // GET /users/:name?minAge=[age] -> List[User]
+
+              final case class User(name: String, age: Int)
+            </code></pre>
+            
+            <aside class="notes">
+              I will use the following example to ease the understanding of the code you will see. What we try to achieve is to find all users with a given name and minimum age.
+	    </aside>
+          </section>
+          <section>
+            <h4>what we want</h4>
+
+            <pre><code class="scala" data-trim>
+              (name: String, minAge: Int) => F[List[User]]
+            </code></pre>
+
+            <aside class="notes">
+              What we want to end up with is a function which takes the name and age and gives us the list of users.
+	    </aside>
+          </section>
+          <section>
+            <h4>api as a type</h4>
+          </section>
+          <section>
+            <h4>paths</h4>
+            GET /<font color="#e86e66">users</font>/:name?minAge=[age] -> List[User]
+
+            <pre><code class="scala" data-trim>
+              // type Path = "users".type - no can do
+
+              val usersW = shapeless.Witness("users")
+
+              sealed trait Path[P]
+
+              type users = Path[usersW.T]
+            </code></pre>
+            
+            <aside class="notes">
+              The first step is to represent our api as a type. Let's start with the path '/users'. We need to encode that as a type. Unfortunately, we just have Vanilla Scala at our hands and literal types aren't a thing, yet. But shapeless has something to overcome this problem called Witness. It forces us onto the value-level but right now that is the only way to get literal types in Scala 2.x. We also add a wrapper type to define it as a path element.
+	    </aside>
+          </section>
+          <section>
+            <h4>segments</h4>
+            GET /users/<font color="#e86e66">:name</font>?minAge=[age] -> List[User]
+
+            <pre><code class="scala" data-trim>
+              val nameW = shapeless.Witness('name)
+
+              sealed trait Segment[K, V]
+
+              type name = Segment[nameW.T, String]
+            </code></pre>
+
+            <aside class="notes">
+              Next comes the segment for the name. Here we label the expected input type String with the segment name.
+	    </aside>
+          </section>
+          <section>
+            <h4>queries</h4>
+            GET /users/:name?<font color="#e86e66">minAge=[age]</font> -> List[User]
+
+            <pre><code class="scala" data-trim>
+              val minAgeW = shapeless.Witness('minAge)
+
+              sealed trait Query[K, V]
+
+              type filter = Query[minAgeW.T, Int]
+            </code></pre>
+
+            <aside class="notes">
+              We use the same technique for queries as we did for the segments and, furthermore, add a type to specify the method.
+	    </aside>
+          </section>
+          <section>
+            <h4>method</h4>            
+            <font color="#e86e66">GET</font> /users/:name?minAge=[age] -> List[User]
+
+            <pre><code class="scala" data-trim>
+              sealed trait Method
+              sealed trait Get[A] extends Method
+            </code></pre>
+
+            <aside class="notes">
+              We use the same technique for queries as we did for the segments and, furthermore, add a type to specify the method.
+	    </aside>
+          </section>
+          <section>
+            <h4>put it all together</h4>
+            
+            <pre><code class="scala" data-trim>
+              val Api = api(Get[List[User]],
+                            Root / "users" / Segment[String]('name), 
+                            Queries.add(Query[Int]('minAge)))
+
+              //Api: ApiTypeCarrier[Get[List[User]] :: name :: users :: ... :: HNil]
+            </code></pre>
+
+            <aside class="notes">
+              Now we put all these into a convenient function call and what we get as result is a type carrier storing our api type. This carrier has no fields or methods. It only exists to hold an HList.
+
+              Okay, we can put a checkmark behind this task. Next thing is to derive the function.
+	    </aside>
+          </section>
+          <section>
+            <h4>let's derive a client - type representation</h4>
+          </section>
+          <section>
+            <h4>expected input</h4>
+                                                                                                   
+            <pre><code class="scala" data-trim>
+              // input key types
+              type KIn = nameW.T :: minAgeW.T :: HNil
+
+              // input value types
+              type VIn = String :: Int :: HNil
+            </code></pre>
+          </section>
+          <section>
+            <h4>api elements</h4>
+
+            <pre><code class="scala" data-trim>
+              type El = usersW.T :: SegmentInput :: QueryInput :: HNil
+            </code></pre>
+          </section>
+          <section>
+            <h4>output</h4>
+                                                                                                   
+            <pre><code class="scala" data-trim>
+              type O = List[User]
+            </code></pre>
+          </section>
+          <section>
+            <h4>method</h4>
+                                                                                                   
+            <pre><code class="scala" data-trim>
+              type M = GetCall
+            </code></pre>
+          </section>
+          <section>
+            <h4>H => (El, KIn, VIn, M, O) ?</h4>
+          </section>
+          <section>
+            <h4>fold over types - aggregation</h4>
+            
+            <pre><code class="scala" data-trim>
+              trait FoldLeftFunction[In, Agg] { type Out }
+
+              implicit def queryFold
+                  [K <: Symbol, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] = 
+                FoldLeftFunction[Query[K, V], (El, KIn, VIn, M, Out)] { 
+                  type Out = (QueryInput :: El, K :: KIn, V :: VIn, M, Out) 
+                }
+
+              // the rest ...
+            </code></pre>
+            
+            <aside class="notes">
+              We define how to aggregate two types, here for the segment ...
+            </aside>
+          </section>
+          <section>
+            <h4>fold over types - traverse</h4>
+            
+            <pre><code class="scala" data-trim>
+              trait TypeLevelFoldLeft[H <: HList, Agg] { type Out }
+
+              implicit def returnCase[Agg] = new TypeLevelFoldLeft[HNil, Agg] {
+                type Out = Agg
+              }
+
+              implicit def foldCase[H, T <: HList, Agg, FfOut, FOut]
+                (implicit f: FoldLeftFunction.Aux[H, Agg, FfOut], 
+                          next: Lazy[TypeLevelFoldLeft.Aux[T, FfOut, FOut]]) = 
+                new TypeLevelFoldLeft[H :: T, Agg] { type Out = FOut }
+            </code></pre>
+            
+            <aside class="notes">
+              And then we construct a recursive call structure to traverse our api type. Here we look at the current element type of our api and try to find the corresponding aggregation. When this is done the next step is resolved with the new intermediate type. In the end, we just return the latest aggregated type as a final result.
+            </aside>
+          </section>
+          <section>
+            <h4>collect the request data</h4>
+
+            <pre><code class="scala" data-trim>
+              type Uri     = List[String]
+              type Queries = Map[String, List[String]]
+ 
+              VIn => (Uri, Queries)
+            </code></pre>
+
+            <aside class="notes">
+              Next step is to derive a function to collect all data necessary to make a request. In our case, this means we need the uri and queries. 
+
+              To do so we will introduce another type class we will call RequestDataBuilder.
+            </aside>
+          </section>
+          <section>
+            <h4>collect the request data</h4>
+
+            <pre><code class="scala" data-trim>
+              trait RequestDataBuilder[El <: HList, KIn <: HList, VIn <: HList] {
+                def apply(inputs: VIn, 
+                          uri: Uri, 
+                          queries: Queries): (Uri, Queries)
+              }
+            </code></pre>
+
+            <aside class="notes">
+              This trait provides a single function which gets the expected input and builds up the uri and queries.
+            </aside>
+          </section>
+          <section>
+            <h4>collect the request data</h4>
+
+            <pre><code class="scala" data-trim>
+              implicit def queryBuilder
+                  [K <: Symbol, V, T <: HList, KIn <: HList, VIn <: HList, M, O]
+                  (implicit wit: Witness.Aux[K], next: RequestDataBuilder[T, KIn, VIn]) = 
+                new RequestDataBuilder[QueryInput :: T, K :: KIn, V :: VIn] {
+                  def apply(inputs: V :: VIn, uri: Uri, queries: Queries): (Uri, Queries) =
+                    next(
+                      inputs.tail, 
+                      uri, 
+                      Map(wit.value.name -> List(inputs.head.toString())) ++ queries
+                    )
+                }
+            </code></pre>
+
+            <aside class="notes">
+              Above is again an example for queries. It resolves the witness of the key and puts that together with the input value into our queries map. After that, it continues with next builder step until no element is left in the api. Then it will return the uri and queries collections.
+            </aside>
+          </section>
+          <section>
+            <h4>what we got so far</h4>
+
+            <pre><code class="scala" data-trim>
+              "joe" :: 42 :: HNil => (List("users", "joe"), Map("minAge" -> List("42")))
+            </code></pre>
+          </section>
+          <section>
+            <h4>do the request</h4>
+
+            <pre><code class="scala" data-trim>
+              trait ApiRequest[M, F[_], C, Out] {
+
+                def apply(data: (Uri, Queries), client: C): F[Out]
+              }
+            </code></pre>
+
+            <aside class="notes">
+              A function to collect request data is quite nice but useless. We have to use these data to make a request. And the mechanism how to execute a request shouldn't be exposed. The best solution, again, is to use type classes. With ApiRequest we only define the method, context F, what client we need and what comes out.
+
+              We can use http4s, akka-http, finagle or any web framework/library to implement this trait those making our approach vendor independent.
+            </aside>
+          </section>
+          <section>
+            <h4>wrap it up</h4>
+
+            <pre><code class="scala" data-trim>
+              // transform -> request data -> request
+              "joe" :: 42 :: HNil => IO(List(User("joe", 42), ...))
+            </code></pre>
+          </section>
+          <section>
+            <h4>make it nice</h4>
+
+            <pre><code class="scala" data-trim>
+              // shapeless.ops.function.FnFromProduct
+              ("joe", 42) => IO(List(User("joe", 42), ...))
+            </code></pre>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h4>Typedapi - what you saw and more</h4>
+            
+            <pre><code class="scala" data-trim>
+              val Api = api(
+                Get[List[User]], 
+                Root / "users" / Segment[String]('name), 
+                Queries add Query[Int]('minAge)
+              )
+
+              val get = derive(Api)
+
+              get("joe", 42).run[IO](client)
+            </code></pre>
+          </section>
+          <section>
+            <h4>Typedapi - what you saw and more</h4>
+            
+            <pre><code class="scala" data-trim>
+              val endpoints = derive[IO](Api).from((name, age) => ???)
+
+              val server = mount(sm, endpoints)
+
+              server.unsafeRunSync()
+            </code></pre>
+          </section>
+          <section>
+            <h4>Typedapi - what you saw and more</h4>
+            
+            <pre><code class="scala" data-trim>
+              val AllTheAPis =
+                api(Get[List[User]], Root / "users" / Segment[String]('name), ...) :|:
+                apiWithBody(Put[Unit], User, Root / "store" / "users")
+
+              val (get, put) = deriveAll(AllTheApis)
+            </code></pre>
+          </section>
+          <section>
+            <h4>Typedapi - what you saw and more</h4>
+            
+            <pre><code class="scala" data-trim>
+              val ServantStyle = := "users" :> 
+                                    Segment[String]('name) :> 
+                                    Query[Int]('minAge) :> 
+                                    Get[List[User]]
+            </code></pre>
+          </section>
+          <section>
+            <h4>Typedapi - what you saw and more</h4>
+            
+            <h6>Support for http4s</h6>
+          </section>
+          <section>
+            <h4>What's next</h4>
+            
+            <ul>
+              <li class="fragment fade-up">support for akka-http and finagle</li>
+              <li class="fragment fade-up">derive swagger documentation from types</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Questions?</h2>
+          </section>
+        </section>
+      </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+       Reveal.initialize({
+           width: "85%",
+           height: "80%",
+           controls: false,
+           progress: false,
+           history: false,
+           center: true,
+
+           transition: 'none', // none/fade/slide/convex/concave/zoom
+
+           dependencies: [
+               { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+               { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+               { src: 'plugin/zoom-js/zoom.js', async: true },
+               { src: 'plugin/notes/notes.js', async: true }
+           ]
+       });
+    </script>        
+  </body>
+</html>
