@@ -2,7 +2,9 @@
 In this blog post, I will show you how to leverage Scala's type system to derive an HTTP client function from a single type. This will also be the story of how I started to work on [Typedapi](https://github.com/pheymann/typedapi) which is basically the attempt to bring Haskell's [Servant](https://github.com/haskell-servant/servant) to Scala.
 
 ## Servant in a nutshell and how it began
-For everyone not knowing Servant, it is a library which lets you define your web apis as types and derives the client and server functions from it. When I saw it for the first time while working on a ped project I immediately loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients. And as I couldn't find any viable alternative in Scala I decided to try it on my own. But I just wanted to start with a single feature to not overwhelm myself and abandoned the project after a short time. Therefore, I set out to make Scala able to derive a client function from a single api type.
+For everyone not knowing Servant, it is a library which lets you define your web apis as types and derives the client and server functions from it. When I saw it for the first time while working on a ped project I immediately loved the idea. Creating web server and clients this way reduces your code to a mere type, you get extra type safety and you can use the api types as contracts between your server and its clients. 
+
+I couldn't find any viable alternative in Scala at the time and decided to build it on my own. But I just wanted to start with a single feature to not overwhelm myself and abandon the project after a short time. Therefore, I set out to make Scala able to derive a client function from a single api type, as we will do in this post.
 
 ## Derive a client function from a type. How hard can it be?
 Let's start with an example we will use later on to ease understanding. Consider the following api:
