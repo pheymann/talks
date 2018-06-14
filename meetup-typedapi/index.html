@@ -246,8 +246,18 @@
             </aside>
           </section>
           <section>
-            <h4>collect the request data</h4>
+            <h4>make it explicit</h4>
 
+            <pre><code class="scala" data-trim>
+                type _Api = Get[List[User]] :: minAge :: name :: users :: HNil
+
+                foldCase(getFold, foldCase(queryFold, foldCase(segmentFold, foldCase(pathFold, returnCase))))
+            </code></pre>
+          </section>
+          <section>
+            <h4>collect the request data</h4>
+          </section>
+          <section>
             <pre><code class="scala" data-trim>
               type Uri     = List[String]
               type Queries = Map[String, List[String]]
@@ -262,7 +272,7 @@
             </aside>
           </section>
           <section>
-            <h4>collect the request data</h4>
+            <h4>yet another type class</h4>
 
             <pre><code class="scala" data-trim>
               trait RequestDataBuilder[El <: HList, KIn <: HList, VIn <: HList] {
@@ -277,7 +287,7 @@
             </aside>
           </section>
           <section>
-            <h4>collect the request data</h4>
+            <h4>instances for every element</h4>
 
             <pre><code class="scala" data-trim>
               implicit def queryBuilder
