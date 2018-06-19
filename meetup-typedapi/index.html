@@ -89,12 +89,23 @@
             <h4>api as a type</h4>
           </section>
           <section>
+            <h4>value -> type ?</h4>
+
+            <pre class="fragment fade-up"><code class="scala" data-trim>
+                // no can do!
+                type path = "users"
+            </code></pre>
+            <pre class="fragment fade-up"><code class="scala" data-trim>
+                val w = shapeless.Witness("users")
+
+                type path = w.T
+            </code></pre>    
+          </section>
+          <section>
             <h4>paths</h4>
             GET /<font color="#e86e66">users</font>/:name?minAge=[age] -> List[User]
 
             <pre><code class="scala" data-trim>
-              // type Path = "users".type - no can do
-
               val usersW = shapeless.Witness("users")
 
               sealed trait Path[P]
@@ -140,7 +151,7 @@
           </section>
           <section>
             <h4>method</h4>            
-            <font color="#e86e66">GET</font> /users/:name?minAge=[age] -> List[User]
+            <font color="#e86e66">GET</font> /users/:name?minAge=[age] -> <font color="#e86e66">List[User]</font>
 
             <pre><code class="scala" data-trim>
               sealed trait Method
@@ -169,7 +180,12 @@
 	    </aside>
           </section>
           <section>
-            <h4>let's derive a client - type representation</h4>
+            <h4>let's derive a client - api type transformation</h4>
+          </section>
+          <section>
+            <code class="scala" data-trim>
+                Api => (El, KIn, VIn, M, O)
+            </code>
           </section>
           <section>
             <h4>expected input</h4>
@@ -190,13 +206,6 @@
             </code></pre>
           </section>
           <section>
-            <h4>output</h4>
-                                                                                                   
-            <pre><code class="scala" data-trim>
-              type O = List[User]
-            </code></pre>
-          </section>
-          <section>
             <h4>method</h4>
                                                                                                    
             <pre><code class="scala" data-trim>
@@ -204,7 +213,14 @@
             </code></pre>
           </section>
           <section>
-            <h4>H => (El, KIn, VIn, M, O) ?</h4>
+            <h4>output</h4>
+                                                                                                   
+            <pre><code class="scala" data-trim>
+              type O = List[User]
+            </code></pre>
+          </section>
+          <section>
+            <h4>How to transform a type?</h4>
           </section>
           <section>
             <h4>fold over types - aggregation</h4>
@@ -249,9 +265,17 @@
             <h4>make it explicit</h4>
 
             <pre><code class="scala" data-trim>
-                type _Api = Get[List[User]] :: minAge :: name :: users :: HNil
+                type Api = Get[List[User]] :: minAge :: name :: users :: HNil
 
-                foldCase(getFold, foldCase(queryFold, foldCase(segmentFold, foldCase(pathFold, returnCase))))
+                // (HNil, HNil, HNil, GetCall, List[User])
+                foldCase(getFold, 
+                  // (QueryInput :: HNil, minAgeW.T :: HNil, Int :: HNil, ...)
+                  foldCase(queryFold,
+                    // (SegmentInput :: ..., nameW.T :: ..., String :: ..., ...)
+                    foldCase(segmentFold,
+                      // (userW.T :: ..., ...)
+                      foldCase(pathFold, 
+                        returnCase))))
             </code></pre>
           </section>
           <section>
@@ -311,6 +335,10 @@
             <h4>what we got so far</h4>
 
             <pre><code class="scala" data-trim>
+              val builder = implicitly[RequestDataBuilder[El, KIn, VIn]]
+
+              val f: VIn => (Uri, Queries) = input => builder(input, Nil, Map.empty)
+
               "joe" :: 42 :: HNil => (List("users", "joe"), Map("minAge" -> List("42")))
             </code></pre>
           </section>
@@ -335,6 +363,11 @@
 
             <pre><code class="scala" data-trim>
               // transform -> request data -> request
+              val request = implicitly[ApiRequest[GetCall, IO, C, List[User]]]
+
+              val f: VIn => IO[List[User]] = 
+                input => request(builder(input, Nil, Map.empty), c)
+
               "joe" :: 42 :: HNil => IO(List(User("joe", 42), ...))
             </code></pre>
           </section>
@@ -343,6 +376,10 @@
 
             <pre><code class="scala" data-trim>
               // shapeless.ops.function.FnFromProduct
+              val fn = implicitly[FnFromProduct[VIn => IO[List[User]]]]
+              val f: (String, Int) => IO[List[User]] = 
+                fn(input => request(builder(input, Nil, Map.empty), c))
+
               ("joe", 42) => IO(List(User("joe", 42), ...))
             </code></pre>
           </section>
