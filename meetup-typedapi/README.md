@@ -1,5 +1,5 @@
 # Typedapi: Define your api on the type-level
-  - [to the slides](https://pheymann.github.io/talks/meetup-typedapi/presentation)
+  - [to the slides](https://pheymann.github.io/talks/meetup-typedapi)
   - [meetup description](https://www.meetup.com/de-DE/Scala-Hamburg/events/251207492/)
 
 ## In Short
