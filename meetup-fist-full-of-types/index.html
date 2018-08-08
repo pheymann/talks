@@ -203,22 +203,48 @@
             <pre><code class="haskell" data-trim>
                 infixr 5 :-
 
-                data Vector a (n :: Nat) where
-                  Nil  :: Vector a 'Z
-                  (:-) :: a -> Vector a n -> Vector a ('S n)
+                data Vector (n :: Nat) a where
+                  Nil  :: Vector 'Z a
+                  (:-) :: a -> Vector n a -> Vector ('S n) a
             </code></pre>
           </section>
           <section>
             <h2>All the guarantees we now have</h2>
 
             <pre><code class="haskell" data-trim>
-                head :: Vector a ('S n) -> a
+                head :: Vector ('S n) a -> a
                 head (x :- _) = x
 
                 let a = 1 :- 2 :- 3 :- Nil
 
-                head a   -- works
+                head a   -- works; 1
                 head Nil -- no no
+            </code></pre>
+          </section>
+          <section>
+            <h2>But, but, but ... what if we need an inhabitant</h2>
+
+            <pre><code class="haskell" data-trim>
+                replicate :: n -> a -> Vector n a
+                -- value of `n`?
+            </code></pre>
+          </section>
+          <section>
+            <h2>singleton to the rescue</h2>
+
+            <pre><code class="haskell" data-trim>
+                data SNat (n :: Nat) where
+                  SZ :: SNat 'Z
+                  SS :: SNat n -> SNat ('S n)
+            </code></pre>
+          </section>
+          <section>
+            <h2>Kinds on the value level</h2>
+
+            <pre><code class="haskell" data-trim>
+                replicate :: SNat n -> a -> Vector n a
+                replicate SZ     _ = Nil
+                replicate (SS n) a = a :- replicate n a
             </code></pre>
           </section>
         </section>
