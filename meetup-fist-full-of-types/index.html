@@ -96,7 +96,7 @@
             <br/>
             <br/>
 
-            <h3>*</h3>
+            <h3>`*`</h3>
           </section>
           <section>
             <h2>The type of a type is called Kind `*`</h2>
@@ -160,13 +160,14 @@
             </code></pre>
           </section>
           <section>
-            <h2>Limitations of type constructors for *</h2>
+            <h2>Limitations of type constructors for `*`</h2>
 
             <br/>
 
             <ul>
                 <li>just for kind `type` - too generic</li>
                 <li>we need a specific kind representing natural numbers</li>
+                <li>and a way to do computations</li>
             </ul>
           </section>
           <section>
@@ -209,7 +210,9 @@
             </code></pre>
           </section>
           <section>
-            <h2>All the guarantees we now have</h2>
+            <h2>Look at all the guarantees we now have</h2>
+
+            <br/>
 
             <pre><code class="haskell" data-trim>
                 head :: Vector ('S n) a -> a
@@ -224,6 +227,8 @@
           <section>
             <h2>But, but, but ... what if we need an inhabitant</h2>
 
+            <br/>
+
             <pre><code class="haskell" data-trim>
                 replicate :: n -> a -> Vector n a
                 -- value of `n`?
@@ -231,6 +236,8 @@
           </section>
           <section>
             <h2>singleton to the rescue</h2>
+
+            <br/>
 
             <pre><code class="haskell" data-trim>
                 data SNat (n :: Nat) where
@@ -242,7 +249,7 @@
             <h2>Kinds on the value level</h2>
 
             <pre><code class="haskell" data-trim>
-                replicate :: SNat n -> a -> Vector n a
+                replicate :: SNat n' -> a -> Vector n' a
                 replicate SZ     _ = Nil
                 replicate (SS n) a = a :- replicate n a
             </code></pre>
