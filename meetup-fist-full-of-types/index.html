@@ -1,0 +1,250 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/white.css" id="theme">
+    <link rel="stylesheet" href="css/presentation.css">
+    
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/vscode.css">
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <section>
+            <h1>A fist full of types</h1>
+          </section>
+          <section>
+            <h2>Questions we answer today</h2>
+
+            <br/>
+
+            <ul>
+                <li class="fragment fade-in">What is a Type?</li>
+                <li class="fragment fade-in">What are they made of?</li>
+                <li class="fragment fade-in">How to do type-level programming with them?</li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>What is a type?</h2>
+
+            <br/>
+
+            <p>Many use it probably every day ...</p>
+            <p class="fragment fade-in">... and love them ...</p>
+            <p class="fragment fade-in">... but what is it?</p>
+          </section>
+          <section>
+            <h2>A type puts constraints on a term</h2>
+          </section>
+          <section>
+            <h2>State of a value</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+              let a = 0 :: Int
+
+              -- a :: Int
+              -- is a number
+              -- -9223372036854775808 <= a <= 9223372036854775807
+
+              let b = a :: String -- no no
+            </code></pre>
+          </section>
+          <section>
+            <h2>Function parameter restriction</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+                add :: Integer -> Integer -> Integer
+                add a b = a + b
+
+                -- only Integer values can be passed
+                -- the result must be an Integer
+            </code></pre>
+          </section>
+          <section>
+            <h2>Set of operations of a type</h2>
+
+            <pre><code class="haskell" data-trim>
+                -- type classes
+                class Monad m where
+                  return :: a -> ma
+                  (>>=) :: ma -> (a -> m b) -> mb
+
+                -- or by restricting functions (as seen before)
+            </code></pre>
+          </section>
+          <section>
+            <h2>Pick a path</h2>
+
+            <ul>
+                <li class="fragment fade-in">Type Theory</li>
+                <li class="fragment fade-in">Type Classes and Polymorphism</li>
+                <li class="fragment fade-in">Type-level programming</li>
+            </ul>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>On level up</h2>
+            
+            <br/>
+            <br/>
+
+            <h3>*</h3>
+          </section>
+          <section>
+            <h2>The type of a type is called Kind `*`</h2>
+            
+            <br/>
+
+            <h3 class="fragment fade-in">Kind is the type of a type constructor</h3>
+          </section>
+          <section>
+            <h2>Data types - type constructor of arity 0</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+                Integer                  -- *
+                Maybe Char               -- *
+                Double -> Double -> Bool -- *
+
+                -- these kinds have inhabitants (values)
+            </code></pre>
+          </section>
+          <section>
+            <h2>Type constructors of arity > 0</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+                -- unary type constructor
+                Maybe        -- * -> *
+                id :: a -> a -- * -> *
+                
+                -- binary type constructor
+                snd :: a -> b -> b  -- * -> * -> *
+
+                -- higher order type constructor
+                return :: Monad m => a -> m a -- (* -> *) -> * -> *
+
+                -- no inhabitants
+            </code></pre>
+          </section>
+          <section>
+            <h2>It gets warmer</h2>
+
+            <br/>
+
+            <p>Looks like a function ...</p>
+            <p class="fragment fade-in">... but can we compute something with it?</p>
+          </section>
+          <section>
+            <h2>Is there a problem?</h2>
+
+            <br/>
+            
+            A <code class="haskell">Vector</code> with a known size <code class="haskell">n :: Nat</code> and element type <code class="haskell">a</code>.
+
+            <pre><code class="haskell" data-trim>
+                type Vect5 = Vector 5 Int
+                type Vect6 = Vector 6 Int
+
+                Vect5 :~: Vect6 -- has to fail
+            </code></pre>
+          </section>
+          <section>
+            <h2>Limitations of type constructors for *</h2>
+
+            <br/>
+
+            <ul>
+                <li>just for kind `type` - too generic</li>
+                <li>we need a specific kind representing natural numbers</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Haskell's data kinds</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+                -- gets lifted to the kind level
+                data Nat = Z | S Nat
+
+                'S('S('Z)) :: Nat -- kind Nat; no inhabitants
+                S(S(Z))    :: *   -- kind *
+            </code></pre>
+          </section>
+          <section>
+            <h2>Haskell's type families</h2>
+
+            <br/>
+
+            <pre><code class="haskell" data-trim>
+                infixl 6 :+
+
+                type family   (n :: Nat) :+ (m :: Nat) :: Nat
+                type instance 'Z     :+ m = m
+                type instance ('S n) :+ m = 'S (n :+ m)
+            </code></pre>
+          </section>
+          <section>
+            <h2>Our Vector becomes ...</h2>
+
+            <br/>
+            
+            <pre><code class="haskell" data-trim>
+                infixr 5 :-
+
+                data Vector a (n :: Nat) where
+                  Nil  :: Vector a 'Z
+                  (:-) :: a -> Vector a n -> Vector a ('S n)
+            </code></pre>
+          </section>
+          <section>
+            <h2>All the guarantees we now have</h2>
+
+            <pre><code class="haskell" data-trim>
+                head :: Vector a ('S n) -> a
+                head (x :- _) = x
+
+                let a = 1 :- 2 :- 3 :- Nil
+
+                head a   -- works
+                head Nil -- no no
+            </code></pre>
+          </section>
+        </section>
+      </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+       Reveal.initialize({
+           width: "80%",
+           height: "80%",
+           controls: false,
+           progress: false,
+           history: false,
+           center: true,
+
+           transition: 'none', // none/fade/slide/convex/concave/zoom
+
+           dependencies: [
+               { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+               { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+               { src: 'plugin/zoom-js/zoom.js', async: true },
+               { src: 'plugin/notes/notes.js', async: true }
+           ]
+       });
+    </script>        
+  </body>
+</html>
