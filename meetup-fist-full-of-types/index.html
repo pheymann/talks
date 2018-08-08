@@ -11,7 +11,7 @@
     <div class="reveal">
       <div class="slides">
         <section>
-          <section>
+          <section data-background="#363633">
             <h1>A fist full of types</h1>
           </section>
           <section>
@@ -22,22 +22,28 @@
             <ul>
                 <li class="fragment fade-in">What is a Type?</li>
                 <li class="fragment fade-in">What are they made of?</li>
-                <li class="fragment fade-in">How to do type-level programming with them?</li>
+                <li class="fragment fade-in">How do we get dependent types?</li>
             </ul>
           </section>
-        </section>
-        <section>
           <section>
-            <h2>What is a type?</h2>
+            <h2>Warning</h2>
 
             <br/>
 
+            
+          </section>
+        </section>
+        <section>
+          <section data-background="#363633">
+            <h2>What is a type?</h2>
+          </section>
+          <section>
             <p>Many use it probably every day ...</p>
             <p class="fragment fade-in">... and love them ...</p>
             <p class="fragment fade-in">... but what is it?</p>
           </section>
           <section>
-            <h2>A type puts constraints on a term</h2>
+            <h2 style="text-decoration: underline">A type puts constraints on a term.</h2>
           </section>
           <section>
             <h2>State of a value</h2>
@@ -70,6 +76,8 @@
           <section>
             <h2>Set of operations of a type</h2>
 
+            <br/>
+
             <pre><code class="haskell" data-trim>
                 -- type classes
                 class Monad m where
@@ -80,17 +88,15 @@
             </code></pre>
           </section>
           <section>
-            <h2>Pick a path</h2>
+            <h2>Let's ask the meta question</h2>
 
-            <ul>
-                <li class="fragment fade-in">Type Theory</li>
-                <li class="fragment fade-in">Type Classes and Polymorphism</li>
-                <li class="fragment fade-in">Type-level programming</li>
-            </ul>
+            <br/>
+
+            What is a type made of?
           </section>
         </section>
         <section>
-          <section>
+          <section data-background="#363633">
             <h2>On level up</h2>
             
             <br/>
@@ -103,7 +109,7 @@
             
             <br/>
 
-            <h3 class="fragment fade-in">Kind is the type of a type constructor</h3>
+            <h3 class="fragment fade-in" style="text-decoration: underline">Kind is the type of a type constructor</h3>
           </section>
           <section>
             <h2>Data types - type constructor of arity 0</h2>
@@ -138,15 +144,27 @@
             </code></pre>
           </section>
           <section>
-            <h2>It gets warmer</h2>
+            <h2>Types depend on types on steroids</h2>
 
             <br/>
 
-            <p>Looks like a function ...</p>
-            <p class="fragment fade-in">... but can we compute something with it?</p>
+            <pre><code class="haskell" data-trim>
+                -- Haskell's type families
+                type family   MyMapping a :: *
+                type instance MyMapping Int    = Bool
+                type instance MyMapping String = Double
+            </code></pre>
           </section>
           <section>
-            <h2>Is there a problem?</h2>
+            <h2>On our way to dependent types</h2>
+
+            <br/>
+
+            <p>We now have types depending on types aka type constructors ...</p>
+            <p class="fragment fade-in">... but what is missing to make types depend on values?</p>
+          </section>
+          <section>
+            <h2>Start with a problem</h2>
 
             <br/>
             
@@ -156,7 +174,7 @@
                 type Vect5 = Vector 5 Int
                 type Vect6 = Vector 6 Int
 
-                Vect5 :~: Vect6 -- has to fail
+                Vect5 ~ Vect6 -- has to be false
             </code></pre>
           </section>
           <section>
@@ -165,9 +183,8 @@
             <br/>
 
             <ul>
-                <li>just for kind `type` - too generic</li>
-                <li>we need a specific kind representing natural numbers</li>
-                <li>and a way to do computations</li>
+                <li>just for kind `type` - too abstract</li>
+                <li>we need to lift data on the type level</li>
             </ul>
           </section>
           <section>
@@ -176,7 +193,7 @@
             <br/>
 
             <pre><code class="haskell" data-trim>
-                -- gets lifted to the kind level
+                -- Nat gets promoted to the kind level; Z and S to the type level
                 data Nat = Z | S Nat
 
                 'S('S('Z)) :: Nat -- kind Nat; no inhabitants
@@ -184,7 +201,7 @@
             </code></pre>
           </section>
           <section>
-            <h2>Haskell's type families</h2>
+            <h2>type families again</h2>
 
             <br/>
 
@@ -197,13 +214,14 @@
             </code></pre>
           </section>
           <section>
-            <h2>Our Vector becomes ...</h2>
+            <h2>We can define the Vector as ...</h2>
 
             <br/>
             
             <pre><code class="haskell" data-trim>
                 infixr 5 :-
 
+                -- n is a index type of kind Nat
                 data Vector (n :: Nat) a where
                   Nil  :: Vector 'Z a
                   (:-) :: a -> Vector n a -> Vector ('S n) a
@@ -222,6 +240,20 @@
 
                 head a   -- works; 1
                 head Nil -- no no
+            </code></pre>
+          </section>
+          <section>
+            <h2>or</h2>
+
+            <pre><code class="haskell" data-trim>
+                append :: Vector n a -> Vector m a -> Vector (n :+ m) a
+                append Nil ys       = ys
+                append (x :- xs) ys = x :- append xs ys
+
+                let a = 1 :- Nil
+                let b = 2 :- Nil
+
+                append a b :: Vector S(S(Z)) Int
             </code></pre>
           </section>
           <section>
@@ -248,11 +280,29 @@
           <section>
             <h2>Kinds on the value level</h2>
 
+            <br/>
+
             <pre><code class="haskell" data-trim>
                 replicate :: SNat n' -> a -> Vector n' a
                 replicate SZ     _ = Nil
                 replicate (SS n) a = a :- replicate n a
             </code></pre>
+          </section>
+        </section>
+        <section>
+          <section data-background="#363633">
+            <h2>Summary</h2>
+          </section>
+          <section>
+            <ul>
+                <li>types are constraints</li>
+                <li class="fragment fade-in">they are of the type kind `*`</li>
+                <li class="fragment fade-in">kinds are type constructor</li>
+                <li class="fragment fade-in">using type families and data kinds in Haskell gives you dependent types</li>
+            </ul>
+          </section>
+          <section>
+            <h1>Questions?</h1>
           </section>
         </section>
       </div>
