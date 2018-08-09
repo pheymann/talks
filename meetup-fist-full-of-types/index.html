@@ -38,9 +38,9 @@
             <h2>What is a type?</h2>
           </section>
           <section>
-            <p>Many use it probably every day ...</p>
-            <p class="fragment fade-in">... and <img src="img/heart-symbol.svg" alt="heart" width="50px"> them ...</p>
-            <p class="fragment fade-in">... but what is it?</p>
+            <p>Many use them probably every day ...</p>
+            <p class="fragment fade-in">... and have a lot of  <img src="img/heart-symbol.svg" alt="heart" width="50px" style="margin: 0"> for them ...</p> 
+            <p class="fragment fade-in">... but what are they?</p>
           </section>
           <section>
             <h2 style="text-decoration: underline">A type puts constraints on a term.</h2>
@@ -150,9 +150,15 @@
 
             <pre><code class="haskell" data-trim>
                 -- Haskell's type families
-                type family   MyMapping a :: *
-                type instance MyMapping Int    = Bool
-                type instance MyMapping String = Double
+                type family Element ce :: *
+
+                class Collection ce where
+                  append :: Element ce -> ce -> ce
+
+                type instance Element [e] = e
+
+                instance Collection [e] where
+                  append e es = e : es
             </code></pre>
           </section>
           <section>
@@ -184,7 +190,7 @@
 
             <ul>
                 <li>just for kind `type` - too abstract</li>
-                <li>we need to lift data on the type level</li>
+                <li>we need to lift types and the kind and data on the type level</li>
             </ul>
           </section>
           <section>
@@ -221,7 +227,7 @@
             <pre><code class="haskell" data-trim>
                 infixr 5 :-
 
-                -- n is a index type of kind Nat
+                -- n is an index type of kind Nat
                 data Vector (n :: Nat) a where
                   Nil  :: Vector 'Z a
                   (:-) :: a -> Vector n a -> Vector ('S n) a
