@@ -153,12 +153,14 @@
                 type family Element ce :: *
 
                 class Collection ce where
-                  append :: Element ce -> ce -> ce
+                  prepend :: Element ce -> ce -> ce
 
                 type instance Element [e] = e
 
                 instance Collection [e] where
-                  append e es = e : es
+                  prepend e es = e : es
+
+                prepend 1 [2,3] // [1,2,3]
             </code></pre>
           </section>
           <section>
@@ -203,7 +205,7 @@
                 data Nat = Z | S Nat
 
                 'S('S('Z)) :: Nat -- kind Nat; no inhabitants
-                S(S(Z))    :: *   -- kind *
+                S(S(Z))    :: *   -- kind *; values of type Nat
             </code></pre>
           </section>
           <section>
@@ -292,6 +294,9 @@
                 replicate :: SNat n' -> a -> Vector n' a
                 replicate SZ     _ = Nil
                 replicate (SS n) a = a :- replicate n a
+
+                // replicate 0 three times
+                replicate SS(SS(SZ)) 0 // Vector 'S('S('Z)) Integer
             </code></pre>
           </section>
         </section>
