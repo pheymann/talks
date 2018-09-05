@@ -24,8 +24,12 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Definition",
-      <.p("me")
+      "What we will see",
+      Enumeration(
+        Item.stable("recursive data type"),
+        Item.fadeIn("recursive functions"),
+        Item.fadeIn("evalutation strategies")
+      )
     )
   )
 
@@ -80,7 +84,7 @@ object Lecture extends JSApp {
       "Data Type: theory",
       <.p("$\\lambda\\alpha.T$"),
       <.br,
-      <.p("Type variable $\\alpha$ may exists in $T$ and represent the entire type itself.")
+      <.p("Type variable $\\alpha$ may exists in $T$ and represents the entire type itself.")
     ),
 
     slide(
@@ -88,6 +92,7 @@ object Lecture extends JSApp {
       haskell("""
         data Nat = Succ Nat | Zero
       """),
+      <.br,
       <.p("$nat = \\lambda\\alpha.1 + \\alpha$")
     ),
 
@@ -159,7 +164,7 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Direct Multi Recursion",
+      "Multi Direct Recursion",
       haskell("""
         data BTree a = Node (BTree a) (BTree a) | Leaf a
 
@@ -170,13 +175,12 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Direct Multi Recursion",
+      "Multi Direct Recursion",
       haskell("""
         let tree = Node (Node (Leaf 0) (Leaf 1)) (Leaf 2)
 
         size tree == (size $ Node (Leaf 0) (Leaf 1)) + (size $ Leaf 2)
-                  == (size $ Node (Leaf 0) (Leaf 1)) + 1
-                  == (size $ Leaf 0) + (size $ Leaf 1) + 1
+                  == (size $ Leaf 0) + (size $ Leaf 1) + (size $ Leaf 2)
                   == 3
       """)
     ),
@@ -206,9 +210,13 @@ object Lecture extends JSApp {
 
     slide(
       "Mutual Recursion",
-      <.p("Two functions which a defined in terms of each other are mutual recursive.")
+      <.p("Two functions which are defined in terms of each other are mutual recursive.")
     ),
- 
+
+    noHeaderSlide(
+      <.h3("Structural/Generative")
+    ),
+
     slide(
       "Structural Recursion",
       <.p("When you consume a (recursive) data structure which gets smaller with every step, " + 
@@ -270,7 +278,7 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Lazy: call-by-name call-by-need",
+      "Lazy: call-by-name, call-by-need",
       haskell("""
         replicate :: a -> n -> List a
         replicate _ 0 = Nil
@@ -279,7 +287,7 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Lazy: call-by-name call-by-need",
+      "Lazy: call-by-name, call-by-need",
       haskell("""
         -- parameters are evaluated when used
         -- stops here
@@ -341,9 +349,9 @@ object Lecture extends JSApp {
           var agg = List.empty[A]
 
           (0 until n).foreach { _ =>
-            b = a :: b
+            agg = a :: agg
           }
-          b
+          agg
         }
       """)
     ),
@@ -376,14 +384,46 @@ object Lecture extends JSApp {
         sealed trait Trampoline[A]
         final case class Cont[A](f: => Trampoline[A]) extends Trampoline[A]
         final case class Pure[A](a: A)                extends Trampoline[A]
-      """),
-      scalaFragment("""
+      """)
+    ),
+
+    slide(
+      "Trampolining: even-odd",
+      scalaC("""
+        def even(n: Int): Trampoline[Boolean] = 
+          if (n == 0) Pure(true)
+          else        Cont(odd(n - 1))
+
+        def odd(n: Int): Trampoline[Boolean] =
+          if (n == 0) Pure(false)
+          else        Cont(even(n - 1))
+      """)
+    ),
+
+    slide(
+      "Trampolining: even-odd",
+      scalaC("""
         @tailrec
         def run[A](tramp: Trampoline[A]): A = tramp match {
           case Cont(f) => run(f)
           case Pure(a) => a
         }
+
+        run(even(3)) == (=> odd(2))
+                     == (=> even(1))
+                     == (=> odd(0)
+                     == false
       """)
+    ),
+
+    slide(
+      "Trampoline => Monad",
+      <.p("Making Trampoline a Monad leads to Free Monads."),
+      <.br,
+      <.p(
+        ^.cls := "fragment fade-in",
+        "But this is another topic :)"
+      )
     )
   )
 
