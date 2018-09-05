@@ -1,2 +1,6 @@
 # emacs
 *.*~
+
+# sbt
+target
+project/target
