@@ -264,22 +264,7 @@ object Lecture extends JSApp {
     slide(
       "Anonymous Recursion: Y-Combinator",
       lisp("""
-        (define naive-factorial
-          (lambda (f)
-            (lambda (n)
-              (if (== n 1)
-                1
-                (* n (f f) (- n 1))))))
-      """),
-      lispFragment("""
-        ((naive-factorial naive-factorial) 3)
-      """)
-    ),
-
-    slide(
-      "Anonymous Recursion: Y-Combinator",
-      lisp("""
-        (define impr-factorial
+        ;; (define naive-factorial
           ((lambda (f)
             (lambda (n)
               (if (== n 1)
@@ -289,17 +274,17 @@ object Lecture extends JSApp {
             (lambda (n)
               (if (== n 1)
                 1
-                (* n (f f) (- n 1))))))
+                (* n (f f) (- n 1)))));;)
       """),
       lispFragment("""
-        (impr-factorial 3)
+        (naive-factorial 3)
       """)
     ),
 
     slide(
       "Anonymous Recursion: Y-Combinator",
       lisp("""
-        (define impr2-factorial
+        ;; (define impr-factorial
           ((lambda (f)
             ((lambda (arg-func)
               (lambda (n)
@@ -313,7 +298,7 @@ object Lecture extends JSApp {
                 (if (== n 1)
                   1
                   (* n (arg-func (- n 1))))))
-            (lambda (x) ((f f) x))))))
+            (lambda (x) ((f f) x)))));;)
       """)
     ),
 
@@ -335,15 +320,6 @@ object Lecture extends JSApp {
       """),
       lispFragment("""
         ((Y fact-loop) 3)
-      """)
-    ),
-
-    slide(
-      "Anonymous Recursion: Y-Combinator",
-      <.p("""
-        \[\begin{aligned}
-        Y & = \lambda f.(\lambda x.f(\,x\,x))\,(\lambda x.f(\,x\,x))
-        \end{aligned} \]
       """)
     ),
 
