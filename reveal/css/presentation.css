@@ -1,13 +1,8 @@
 .reveal section pre,
-.reveal section img,
-.slide-header img {
+.reveal section img {
     background: none;
     border:     none;
     box-shadow: none;
-}
-
-.reveal section pre {
-    margin-left: 20%;
 }
 
 .slide-header,
@@ -31,9 +26,9 @@
     position: relative;
     float: left;
     margin: 0;
-    padding-top: 15px;
+    padding-top: 20px;
     padding-bottom: 11px;
-    padding-left: 20px;
+    padding-left: 50px;
     font-size: 70%;
 }
 
@@ -43,14 +38,6 @@
 
 .exercise-header > p {
     color: #ffffff;
-}
-
-.slide-header > img,
-.exercise-header > img {
-    position: relative;
-    float: left;
-    width: 33px;
-    padding-left: 55px;
 }
 
 .reveal section ul li > p {

@@ -80,6 +80,7 @@ object SlideshowUtil {
   def bash(codeStr: String): TagOf[HTMLElement] = <.pre(rawCode("Bash", codeStr))
   def scalaC(codeStr: String): TagOf[HTMLElement] = <.pre(rawCode("Scala", codeStr))
   def haskell(codeStr: String): TagOf[HTMLElement] = <.pre(rawCode("Haskell", codeStr))
+  def lisp(codeStr: String): TagOf[HTMLElement] = <.pre(rawCode("Lisp", codeStr))
 
   private def rawCodeFragment(language: String, codeStr: String): TagOf[HTMLElement] =
     <.pre(
@@ -89,6 +90,7 @@ object SlideshowUtil {
 
   def scalaFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Scala", codeStr)
   def haskellFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Haskell", codeStr)
+  def lispFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Lisp", codeStr)
 
   object Enumeration {
    

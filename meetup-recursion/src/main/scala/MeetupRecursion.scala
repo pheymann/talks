@@ -247,14 +247,78 @@ object Lecture extends JSApp {
 
     slide(
       "Anonymous Recursion: Y-Combinator",
-      <.p("""
-        \[\begin{aligned}
-        fact & = \lambda f.\lambda n.\,if\,n == 0\,then\,1\,else\,n * f\,(f)\,(n - 1) \\
-        \newline
-        fact\,(fact)\,2 & = 2 * fact\,(fact)\,(1)     \\
-                        & = 2 * 1 * fact\,(fact)\,(0) \\
-                        & = 2
-        \end{aligned} \]
+      lisp("""
+        (define naive-factorial
+          (lambda (f)
+            (lambda (num)
+              (if (<= 0)
+                1
+                (* num (f f) (- num 1))))))
+      """),
+      lispFragment("""
+        ((naive-factorial naive-factorial) 3)
+      """)
+    ),
+
+    slide(
+      "Anonymous Recursion: Y-Combinator",
+      lisp("""
+        (define impr-factorial
+          ((lambda (f)
+            (lambda (num)
+              (if (<= 0)
+                1
+                (* num (f f) (- num 1))))))
+          (lambda (f)
+            (lambda (num)
+              (if (<= 0)
+                1
+                (* num (f f) (- num 1))))))
+      """),
+      lispFragment("""
+        (impr-factorial 3)
+      """)
+    ),
+
+    slide(
+      "Anonymous Recursion: Y-Combinator",
+      lisp("""
+        (define impr2-factorial
+          ((lambda (f)
+            ((lambda (arg-func)
+              (lambda (num)
+                (if (<= 0)
+                  1
+                  (* num (arg-func (- num 1))))))
+            (lambda (x) ((f f) x))))
+          (lambda (f)
+            ((lambda arg-func
+              (lambda (num)
+                (if (<= 0)
+                  1
+                  (* num (arg-func (- num 1))))))
+            (lambda (x) ((f f) x))))))
+      """)
+    ),
+
+    slide(
+      "Anonymous Recursion: Y-Combinator",
+      lisp("""
+        (define fact-loop
+          (lambda (arg-func)
+            (lambda (num)
+              (if (<= num 0)
+                1
+                (* num (arg-func (- num 1)))))))
+      """),
+      lispFragment("""
+        (define Y
+          (lambda (X)
+            ((lambda (f) (X (lambda (x) ((f f) x))))
+              (lambda (f) (X (lambda (x) ((f f) x)))))))
+      """),
+      lispFragment("""
+        ((Y fact-loop) 3)
       """)
     ),
 
