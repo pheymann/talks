@@ -26,9 +26,19 @@ object Lecture extends JSApp {
     slide(
       "What we will see",
       Enumeration(
-        Item.stable("recursive data type"),
+        Item.stable("recursive data types"),
         Item.fadeIn("recursive functions"),
         Item.fadeIn("evalutation strategies")
+      )
+    ),
+
+    slide(
+      "Kinds",
+      Enumeration(
+        Item.stable("single/multi recursion"),
+        Item.fadeIn("direct/indirect recursion"),
+        Item.fadeIn("structural/generative recursion"),
+        Item.fadeIn("anonymous recursion")
       )
     )
   )
@@ -44,17 +54,17 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Data Type: Nat",
-      haskell("""
-        data Nat = Succ Nat | Zero
+      "Nat: Single Direct Recursion",
+      haskell("""        
+        data Nat = S Nat | Z
       """),
       haskellFragment("""
-        let _3 = Succ (Succ (Succ Zero))
+        let _3 = S (S (S Z))
       """)
     ),
 
     slide(
-      "Data Type: List",
+      "List: Single Direct Recursion",
       haskell("""
         data List a = Cons a (List a) | Nil
       """),
@@ -64,12 +74,14 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Data Type: mutual recursion",
-      <.p("Two data types are definited in terms of each other.")
+      "Mutual Recursion",
+      <.p("Two data types are definited in terms of each other."),
+      <.br,
+      <.p("This is restricted Indirect Recursion.")
     ),
 
     slide(
-      "Data Type: mutual recursion",
+      "Mutual Recursion",
       haskell("""
         data Tree a   = Node a (Forest a) | Empty
         data Forest a = Cons (Tree a) (Forest a) | Nil
@@ -78,22 +90,6 @@ object Lecture extends JSApp {
         -- binary tree with values in nodes
         let tree = Node 0 (Cons (Node 1 Nil) (Cons (Node 2 Nil)))
       """)
-    ),
-
-    slide(
-      "Data Type: theory",
-      <.p("$\\lambda\\alpha.T$"),
-      <.br,
-      <.p("Type variable $\\alpha$ may exists in $T$ and represents the entire type itself.")
-    ),
-
-    slide(
-      "Data Type: theory for Nat",
-      haskell("""
-        data Nat = Succ Nat | Zero
-      """),
-      <.br,
-      <.p("$nat = \\lambda\\alpha.1 + \\alpha$")
     ),
 
     noHeaderSlide(
@@ -114,7 +110,7 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Function: factorial",
+      "Factorial",
       haskell("""
         fact :: Int -> Int
         fact 1 = 1
@@ -133,14 +129,8 @@ object Lecture extends JSApp {
       """)
     ),
 
-    slide(
-      "Kinds",
-      Enumeration(
-        Item.stable("single/multi recursion"),
-        Item.fadeIn("direct/indirect recursion"),
-        Item.fadeIn("structural/generative recursion"),
-        Item.fadeIn("anonymous recursion")
-      )
+    noHeaderSlide(
+      <.h3("(Single Multi) (Direct Indirect) Recursion")
     ),
 
     slide(
@@ -245,15 +235,19 @@ object Lecture extends JSApp {
       """)
     ),
 
+    noHeaderSlide(
+      <.h3("Anonymous Recursion")
+    ),
+
     slide(
       "Anonymous Recursion: Y-Combinator",
       lisp("""
         (define naive-factorial
           (lambda (f)
-            (lambda (num)
+            (lambda (n)
               (if (<= 0)
                 1
-                (* num (f f) (- num 1))))))
+                (* n (f f) (- n 1))))))
       """),
       lispFragment("""
         ((naive-factorial naive-factorial) 3)
@@ -265,15 +259,15 @@ object Lecture extends JSApp {
       lisp("""
         (define impr-factorial
           ((lambda (f)
-            (lambda (num)
+            (lambda (n)
               (if (<= 0)
                 1
-                (* num (f f) (- num 1))))))
+                (* n (f f) (- n 1))))))
           (lambda (f)
-            (lambda (num)
+            (lambda (n)
               (if (<= 0)
                 1
-                (* num (f f) (- num 1))))))
+                (* n (f f) (- n 1))))))
       """),
       lispFragment("""
         (impr-factorial 3)
@@ -286,17 +280,17 @@ object Lecture extends JSApp {
         (define impr2-factorial
           ((lambda (f)
             ((lambda (arg-func)
-              (lambda (num)
+              (lambda (n)
                 (if (<= 0)
                   1
-                  (* num (arg-func (- num 1))))))
+                  (* n (arg-func (- n 1))))))
             (lambda (x) ((f f) x))))
           (lambda (f)
             ((lambda arg-func
-              (lambda (num)
+              (lambda (n)
                 (if (<= 0)
                   1
-                  (* num (arg-func (- num 1))))))
+                  (* n (arg-func (- n 1))))))
             (lambda (x) ((f f) x))))))
       """)
     ),
@@ -306,10 +300,10 @@ object Lecture extends JSApp {
       lisp("""
         (define fact-loop
           (lambda (arg-func)
-            (lambda (num)
-              (if (<= num 0)
+            (lambda (n)
+              (if (<= n 0)
                 1
-                (* num (arg-func (- num 1)))))))
+                (* n (arg-func (- n 1)))))))
       """),
       lispFragment("""
         (define Y
@@ -341,6 +335,10 @@ object Lecture extends JSApp {
       <.h2("Evaluation Strategies")
     ),
 
+    noHeaderSlide(
+      <.h3("Lazy")
+    ),
+
     slide(
       "Lazy: call-by-name, call-by-need",
       haskell("""
@@ -357,6 +355,10 @@ object Lecture extends JSApp {
         -- stops here
         replicate 0 100 == Cons 0 $ replicate 0 (100 - 1)
       """)
+    ),
+
+    noHeaderSlide(
+      <.h3("Strict")
     ),
 
     slide(
@@ -379,7 +381,7 @@ object Lecture extends JSApp {
 
     slide(
       "Strict: call-by-value",
-      <.p("Every recursive step is eagerly evaluated and thus can overflow the stack.")
+      <.p("Every recursive step is eagerly evaluated and that can overflow the stack.")
     ),
 
     noHeaderSlide(
@@ -410,12 +412,12 @@ object Lecture extends JSApp {
       "Tail-Recursion",
       scalaC("""
         def replicate[A](a: A, n: Int, agg: List[A] = Nil): List[A] = {
-          var agg = List.empty[A]
+          var _agg = agg
 
           (0 until n).foreach { _ =>
-            agg = a :: agg
+            _agg = a :: _agg
           }
-          agg
+          _agg
         }
       """)
     ),
@@ -491,6 +493,57 @@ object Lecture extends JSApp {
     )
   )
 
+  val summary = chapter(
+    chapterSlide(
+      <.h2("Summary")
+    ),
+
+    slide(
+      "Data Types",
+      haskell("""
+        data List a = Cons a (List a) | Nil
+      """)
+    ),
+
+    slide(
+      "Functions",
+      haskell("""
+        fact :: Int -> Int
+        fact 0 = 1
+        fact n = n * (fact $ n - 1)
+      """)
+    ),
+
+    slide(
+      "Functions",
+      Enumeration(
+        Item.stable("single/multi recursion"),
+        Item.fadeIn("direct/indirect recursion"),
+        Item.fadeIn("structural/generative recursion"),
+        Item.fadeIn("anonymous recursion")
+      )
+    ),
+
+    slide(
+      "Evaluation Strategies",
+      Enumeration(
+        Item.stable("lazy"),
+        Item.fadeIn("strict"),
+      )
+    ),
+
+    slide(
+      "Tail-Recursion and Trampolining",
+      <.p("How to keep the stack safe on strict languages.")
+    ),
+
+    noHeaderSlide(
+      <.h2("Thanks"),
+      <.br,
+      <.h3("Questions?")
+    )
+  )
+
   val Show = ScalaComponent
     .builder[Unit]("Slideshow")
     .renderStatic(
@@ -501,7 +554,8 @@ object Lecture extends JSApp {
           introduction,
           recursiveDS,
           recursiveFunctions,
-          evaluation
+          evaluation,
+          summary
         )
       )
     )
