@@ -19,11 +19,6 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "Definition",
-      <.p("Solving a problem where the solution depends on solutions to smaller instances of the same problem.")
-    ),
-
-    slide(
       "What we will see",
       Enumeration(
         Item.stable("recursive data types"),
@@ -40,6 +35,11 @@ object Lecture extends JSApp {
         Item.fadeIn("structural/generative recursion"),
         Item.fadeIn("anonymous recursion")
       )
+    ),
+
+    slide(
+      "Definition",
+      <.p("Solving a problem where the solution depends on solutions to smaller instances of the same problem.")
     )
   )
 
@@ -53,8 +53,12 @@ object Lecture extends JSApp {
       <.p("The definition of a data type depends on itself.")
     ),
 
+    noHeaderSlide(
+      <.h3("Single Direct Recursion")
+    ),
+
     slide(
-      "Nat: Single Direct Recursion",
+      "Nat",
       haskell("""        
         data Nat = S Nat | Z
       """),
@@ -64,7 +68,7 @@ object Lecture extends JSApp {
     ),
 
     slide(
-      "List: Single Direct Recursion",
+      "List",
       haskell("""
         data List a = Cons a (List a) | Nil
       """),
@@ -73,27 +77,43 @@ object Lecture extends JSApp {
       """)
     ),
 
+    noHeaderSlide(
+      <.h3("Multi Direct Recursion")
+    ),
+
     slide(
-      "Mutual Recursion",
-      <.p("Two data types are definited in terms of each other."),
-      <.br,
-      <.p("This is restricted Indirect Recursion.")
+      "Tree",
+      haskell("""
+        data BTree a = Node (BTree a) (BTree a) | Leaf a
+      """),
+      haskellFragment("""
+        let btree = Node (Leaf 0) (Leaf 1)
+      """)
+    ),
+
+    noHeaderSlide(
+      <.h3("Indirect Recursion")
     ),
 
     slide(
       "Mutual Recursion",
       haskell("""
-        data Tree a   = Node a (Forest a) | Empty
+        data Tree a   = Node (Forest a) | Leaf a
         data Forest a = Cons (Tree a) (Forest a) | Nil
       """),
       haskellFragment("""
         -- binary tree with values in nodes
-        let tree = Node 0 (Cons (Node 1 Nil) (Cons (Node 2 Nil)))
+        let tree = Node (Cons (Leaf 0) (Cons (Leaf 1)))
       """)
     ),
 
+    slide(
+      "Mutual Recursion",
+      <.p("Two data types are definited in terms of each other.")
+    ),
+
     noHeaderSlide(
-      <.h3("Now we have recursive data structures"),
+      <.h3("Now we have recursive data types"),
       <.br,
       <.h4("But how do we process them?")
     )
@@ -106,7 +126,7 @@ object Lecture extends JSApp {
 
     slide(
       "In Short",
-      <.p("Functions which call themselves.")
+      <.p("Function which calls itself.")
     ),
 
     slide(
@@ -136,6 +156,8 @@ object Lecture extends JSApp {
     slide(
       "Single Direct Recursion",
       haskell("""
+        data List a = Cons a (List a) | Nil
+
         length :: List a -> Int
         length Cons _ tail = 1 + (length tail)
         length Nil         = 0
@@ -245,7 +267,7 @@ object Lecture extends JSApp {
         (define naive-factorial
           (lambda (f)
             (lambda (n)
-              (if (<= 0)
+              (if (== n 1)
                 1
                 (* n (f f) (- n 1))))))
       """),
@@ -260,12 +282,12 @@ object Lecture extends JSApp {
         (define impr-factorial
           ((lambda (f)
             (lambda (n)
-              (if (<= 0)
+              (if (== n 1)
                 1
                 (* n (f f) (- n 1))))))
           (lambda (f)
             (lambda (n)
-              (if (<= 0)
+              (if (== n 1)
                 1
                 (* n (f f) (- n 1))))))
       """),
@@ -281,14 +303,14 @@ object Lecture extends JSApp {
           ((lambda (f)
             ((lambda (arg-func)
               (lambda (n)
-                (if (<= 0)
+                (if (== n 1)
                   1
                   (* n (arg-func (- n 1))))))
             (lambda (x) ((f f) x))))
           (lambda (f)
             ((lambda arg-func
               (lambda (n)
-                (if (<= 0)
+                (if (== n 1)
                   1
                   (* n (arg-func (- n 1))))))
             (lambda (x) ((f f) x))))))
@@ -301,7 +323,7 @@ object Lecture extends JSApp {
         (define fact-loop
           (lambda (arg-func)
             (lambda (n)
-              (if (<= n 0)
+              (if (== n 1)
                 1
                 (* n (arg-func (- n 1)))))))
       """),
