@@ -243,7 +243,7 @@ object Lecture extends JSApp {
     slide(
       "Generative Recursion",
       haskell("""
-        replicate :: a -> n -> List a
+        replicate :: a -> Int -> List a
         replicate _ 0 = Nil
         replicate a n = Cons a $ replicate a (n - 1)
       """)
@@ -340,7 +340,7 @@ object Lecture extends JSApp {
     slide(
       "Lazy: call-by-name, call-by-need",
       haskell("""
-        replicate :: a -> n -> List a
+        replicate :: a -> Int -> List a
         replicate _ 0 = Nil
         replicate a n = Cons a $ replicate a (n - 1)
       """)
