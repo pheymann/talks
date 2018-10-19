@@ -88,7 +88,7 @@ object SlideshowUtil {
       rawCode(language, codeStr)
     )
 
-  def scalaFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Scala", codeStr)
+  def scalaCFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Scala", codeStr)
   def haskellFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Haskell", codeStr)
   def lispFragment(codeStr: String): TagOf[HTMLElement] = rawCodeFragment("Lisp", codeStr)
 

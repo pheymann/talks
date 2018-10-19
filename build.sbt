@@ -15,6 +15,36 @@ lazy val common = Seq(
   scalaJSUseMainModuleInitializer := true
 )
 
+val copyFast = taskKey[Unit]("Copy fast optimized JS presentation.")
+
+def copyFastImpl(project: String) = Seq(
+  copyFast := {
+    IO.copyFile(
+      target.value / "scala-2.12" / s"$project-fastopt.js",
+      baseDirectory.value / "presentation.js"
+    )
+    IO.copyFile(
+      target.value / "scala-2.12" / s"$project-jsdeps.js",
+      baseDirectory.value / "jsdeps.js"
+    )
+  }
+)
+
+val copyFull = taskKey[Unit]("Copy fully optimized JS presentation.")
+
+def copyFullImpl(project: String) = Seq(
+  copyFull := {
+    IO.copyFile(
+      target.value / "scala-2.12" / s"$project-opt.js",
+      baseDirectory.value / "presentation.js"
+    )
+    IO.copyFile(
+      target.value / "scala-2.12" / s"$project-jsdeps.min.js",
+      baseDirectory.value / "jsdeps.js"
+    )
+  }
+)
+
 lazy val root = project
   .in(file("."))
   .aggregate(
@@ -30,5 +60,23 @@ lazy val shared = project
 lazy val `meetup-recursion` = project
   .in(file("meetup-recursion"))
   .enablePlugins(ScalaJSPlugin)
-  .settings(common)
+  .settings(
+    common,
+    copyFastImpl("meetup-recursion"),
+    copyFullImpl("meetup-recursion"),
+    addCommandAlias("fastCompile", "; fastOptJS; copyFast"),
+    addCommandAlias("fullCompile", "; fullOptJS; copyFull")
+  )
+  .dependsOn(shared)
+
+lazy val `scalaio-2018` = project
+ .in(file("scalaio-2018"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    common,
+    copyFastImpl("scalaio-2018"),
+    copyFullImpl("scalaio-2018"),
+    addCommandAlias("fastCompile", "; fastOptJS; copyFast"),
+    addCommandAlias("fullCompile", "; fullOptJS; copyFull")
+  )
   .dependsOn(shared)
