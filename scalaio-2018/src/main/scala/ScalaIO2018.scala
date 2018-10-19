@@ -295,6 +295,165 @@ object ScalaIO extends JSApp {
       <.h2("Derive Clients"),
       <.br,
       <.h3("Recursively derive a client function.")
+    ),
+
+    slide(
+      "Current State",
+      <.p("What we want to end up with:"),
+      <.br,
+      scalaC("""
+        val client: (String, Int) => IO[List[User]] = (name, minAge) => ???
+      """)
+    ),
+
+    noHeaderSlide(
+      <.p("Ho does the HTTP request looks like.")
+    ),
+
+    slide(
+      "Do a Request",
+      scalaC("""
+        trait HttpRequest[M, F[_], C, Out] {
+
+          def apply(path: List[String], queries, Map[String, List[String]), client: C): F[Out]
+        }
+      """),
+      scalaCFragment("""
+
+        implicit def http4sIOGet[O] = new HttpRequest[GetMethod, IO, Client[IO], O] {
+          ...
+        }
+      """)
+    ),
+
+    slide(
+      "What we need",
+      Enumeration(
+        Item.stable("types of input parameters (segment, query)"),
+        Item.fadeIn("literal types of queries"),
+        Item.fadeIn("separation of method and return type"),
+        Item.fadeIn("list of path elements")
+      )
+    ),
+
+    slide(
+      "What we need",
+      <.p("What we want is to fold our API type."),
+      <.br,
+      scalaC("""
+        Get[List[User]] :: MinAgeQ :: Name :: Users :: HNil 
+
+            ~>
+
+        (
+          QueryInput   :: SegmentInput :: Users :: HNil, // El
+          Int          :: String       :: HNil,          // KIn
+          minAgeW.T    :: nameW.T      :: HNil,          // VIn
+          GetMethod,                                     // M
+          List[User]                                     // Out
+        )
+      """)
+    ),
+
+    noHeaderSlide(
+      <.p("But how do you fold a HList type?")
+    ),
+
+    noHeaderSlide(
+      <.p("How to iterate over a HList type?")
+    ),
+
+    slide(
+      "Iterate over a HList type",
+      <.p("You can leverage Scala's implicit resolution mechanism to iterate over an HList type. Use implicit recursive resolution.")
+    ),
+
+    slide(
+      "Type-Level Fold Left",
+      scalaC("""
+        // start with a type-class describing your computation
+        trait TplFolder[H <: HList, Agg] { type Out }
+
+        type Aux[H <: HList, Agg, Out0] = TplFolder[H, Agg] { type Out = Out0 }
+      """),
+      scalaCFragment("""
+        // final case
+        implicit def returnTplFolder[Agg] = new TypeLevelFoldLeft[HNil, Agg] {
+          type Out = Agg
+        }
+      """),
+      scalaCFragment("""
+        // recursive resolution (useless for now)
+        implicit def recTplFolder[H, T <: HList, Agg, FOut](implicit next: TplFolder.Aux[T, H, FOut]) =
+          new TplFolder[H :: T, Agg] { type Out = FOut }
+      """)
+    ),
+
+    slide(
+      "Type-Level Fold Left",
+      <.p("Define a mapping case from two types In and Agg to Out."),
+      <.br,
+      scalaC("""
+        trait TplCase[In, Agg] { type Out }
+
+        type Aux[In, Agg, Out0] = TplCase[In, Agg] { type Out = Out0 }
+      """),
+      scalaCFragment("""
+        implicit def queryCase
+            [K <: Symbol, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
+          new TplCase[Query[K, V], (El, KIn, VIn, M, Out)] {
+            type Out = (QueryInput :: El, K :: KIn, V :: VIn, M, Out)
+          }
+ 
+        ...
+      """)
+    ),
+
+    slide(
+      "Type-Level Fold Left",
+      <.p("Define a mapping case from two types In and Agg to Out."),
+      <.br,
+      scalaC("""
+        trait TplCase[In, Agg] { type Out }
+
+
+
+        //implicit def queryCase
+        //    [K <: Symbol, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
+          new TplCase[Query[K, V], (El, KIn, VIn, M, Out)] {
+            type Out = (QueryInput :: El, K :: KIn, V :: VIn, M, Out)
+          }
+ 
+        ...
+      """)
+    ),
+
+    slide(
+      "Type-Level Fold Left",
+      scalaC("""
+        // recursive resolution (useleful)
+        implicit def recTplFolder[H, T <: HList, Agg, COut, FOut]
+            (implicit f:    TplCase.Aux[H, Agg, COut],
+                      next: Lazy[TplFolder.Aux[T, COut, FOut]]) =
+          new TplFolder[H :: T, Agg] { type Out = FOut }
+      """)
+    ),
+
+    slide(
+      "Fold our API",
+      scalaC("""
+        type Api = Get[List[User]] :: MinAgeQ :: Name :: Users :: HNil
+
+        // (HNil, HNil, HNil, GetCall, List[User])
+        recTplFolder(getCase,
+          // (QueryInput :: HNil, minAgeW.T :: HNil, Int :: HNil, ...)
+          recTplFolder(queryCase,
+            // (SegmentInput :: ..., nameW.T :: ..., String :: ..., ...)
+            recTplFolder(segmentCase,
+              // (userW.T :: ..., ...)
+              recTplFolder(pathCase,
+                returnCase))))
+      """)
     )
   )
 
