@@ -1,0 +1,30 @@
+@import "./../../reveal/css/presentation.css";
+
+h2:after {
+    display: block;
+    height: 2px;
+    background-color: #e67e22;
+    content: " ";
+    width: 300px;
+    margin: 10px auto;
+}
+
+
+.slide-header {
+    background-color: #fff;
+}
+
+.slide-header > p:after {
+    display: block;
+    height: 2px;
+    background-color: #e67e22;
+    content: " ";
+    width: 100px;
+    margin-left: 0px;
+    margin-top: 20px;
+}
+
+.slide-header > p {
+    color: #3e3e3b;
+    font-size: 80%;
+}
