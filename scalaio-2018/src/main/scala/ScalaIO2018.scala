@@ -56,7 +56,7 @@ object ScalaIO extends JSApp {
       ),
       <.br,
       <.br,
-      <.p("implicit recursion ~ type-level computation")
+      <.p("implicit recursive resolution ~ type-level computation")
     ),
 
     noHeaderSlide(
@@ -70,8 +70,16 @@ object ScalaIO extends JSApp {
       "Me: Paul Heymann",
       Enumeration(
         Item.stable("Data Engineer @ Xing"),
-        Item.fadeIn("Scala Trainer"),
-        Item.fadeIn("infrequently speaking at conferences and Meetups")
+        Item.fadeIn(
+          <.div(
+            <.p("Scala Trainer: "),
+            <.a(
+              ^.href := "https://github.com/scalasummerschool",
+              "https://github.com/scalasummerschool"
+            )
+          )
+        ),
+        Item.fadeIn("unfrequent speaker, a bit of Open Source ")
       )
     )
   )
@@ -207,13 +215,13 @@ object ScalaIO extends JSApp {
     slide(
       "Create a complete API: v2.0",
       scalaC("""
-        val apiT = api(
+        val Api = api(
           method  = Get[List[Users]],
           path    = Root / "users" / Segment[String]("name"),
           queries = Queries add Query[Int]("minAge")
         )
 
-        type Api = apiT.T
+        type ApiT = Api.T
       """)
     ),
 
@@ -267,8 +275,8 @@ object ScalaIO extends JSApp {
         final case class PathBuilder[P <: HList]() {
           ...
 
-          def /[K, V](segment: TypeCarrier[SegmentParam[K, V]]): 
-              PathBuilder[SegmentParam[K, V] :: P] = 
+          def /[K, V](segment: TypeCarrier[Segment[K, V]]): 
+              PathBuilder[Segment[K, V] :: P] = 
             PathListBuilder()
         }
       """),
@@ -293,6 +301,8 @@ object ScalaIO extends JSApp {
           path    = Root / "users" / Segment[String]("name"),
           queries = Queries add Query[Int]("minAge")
         )
+
+        // type ApiT = GetUsers :: Users :: Name :: MinAgeQ :: HNil
       """)
     )
   )
@@ -340,7 +350,8 @@ object ScalaIO extends JSApp {
         trait HttpRequest[M <: Method, F[_], C, Out] {
 
           def apply(path: List[String], 
-                    queries, Map[String, List[String]), client: C): 
+                    queries, Map[String, List[String]], 
+                    client: C): 
             F[Out]
         }
       """)
@@ -350,9 +361,9 @@ object ScalaIO extends JSApp {
       "Necessary information",
       Enumeration(
         Item.stable("types of input parameters (segment, query)"),
-        Item.fadeIn("literal types of queries"),
-        Item.fadeIn("separation of method and return type"),
-        Item.fadeIn("list of path elements")
+        Item.fadeIn("method and return type"),
+        Item.fadeIn("list of path elements"),
+        Item.fadeIn("map of queries")
       )
     ),
 
@@ -365,8 +376,8 @@ object ScalaIO extends JSApp {
 
         (
           QueryInput   :: SegmentInput :: Users :: HNil, // El
-          Int          :: String       :: HNil,          // KIn
-          minAgeW.T    :: nameW.T      :: HNil,          // VIn
+          minAgeW.T    :: nameW.T      :: HNil,          // KIn
+          Int          :: String       :: HNil,          // VIn
           GetMethod,                                     // M
           List[User]                                     // Out
         )
@@ -414,7 +425,7 @@ object ScalaIO extends JSApp {
       scalaCFragment("""
         implicit def getCase[Out] =
           new TplCase[Get[Out], Unit] {
-            type Out = (HNil, HNil, HNil, GetCall, Out)
+            type Out = (HNil, HNil, HNil, GetMethod, Out)
           }
       """)
     ),
@@ -456,24 +467,24 @@ object ScalaIO extends JSApp {
       "Fold our API",
       scalaC("""
         implicitly[TplFolder[
-          Get[List[User]] :: MinAgeQ :: Name :: Users :: HNil, 
+          Get[List[User]] :: Users :: Name :: MinAgeQ :: HNil, 
           Unit
         ]]
 
-        // (HNil, HNil, HNil, GetCall, List[User])
+        // (HNil, HNil, HNil, GetMethod, List[User])
         recTplFolder(getCase,
-          // (QueryInput :: HNil, minAgeW.T :: HNil, Int :: HNil, ...)
-          recTplFolder(queryCase,
-            // (SegmentInput :: ..., nameW.T :: ..., String :: ..., ...)
+          // (Users :: HNil, HNil, HNil, ...)
+          recTplFolder(pathCase,
+            // (SegmentInput :: ..., nameW.T :: HNil, String :: HNil, ...)
             recTplFolder(segmentCase,
-              // (userW.T :: ..., ...)
-              recTplFolder(pathCase,
+              // (QueryInput :: ..., minAge.T :: ..., Int :: ..., ...)
+              recTplFolder(queryCase,
                 returnCase))))
       """)
     ),
 
     noHeaderSlide(
-      <.p("We have the information we need. Now we will collect all data needed to do a request.")
+      <.p("We have the information we need. Now we will collect all data necessary to do a request.")
     ),
 
     slide(
@@ -554,10 +565,10 @@ object ScalaIO extends JSApp {
       scalaC("""
         val builder = implicitly[RequestDataBuilder[El, KIn, VIn]]
 
-        builder("Gandalf" :: 2019 :: HNil, Nil, Map())
-          -> next(input, "users" :: path, queries)
+        builder(2019 :: "Gandalf" :: HNil, Nil, Map())
+          -> next(input.tail, path, queries + ("minAge" -> List("2019")))
             -> next(input.tail, "Gandalf" :: path , queries)
-              -> next(input.tail, path, queries + ("minAge" -> List("2019")))
+              -> next(input, "users" :: path, queries)
                 -> (List("users", "Gandalf"), Map("minAge" -> List("2019")))
       """)
     ),
@@ -589,10 +600,10 @@ object ScalaIO extends JSApp {
             (api: TypeCarrier[Api])
             (implicit fold:    Lazy[TypeLevelFoldLeft.Aux[Api, Fold], 
                                     (El, KIn, VIn, M, Out)]
-                      builder: RequestBuilder[El, KIn, VIn],
-                      req:     ApiRequest[M, IO, C, Out])
-            : VIn => C => IO[Out] = 
-          vin => c => {
+                      builder: RequestDataBuilder[El, KIn, VIn],
+                      req:     HttpRequest[M, IO, C, Out])
+            : C => VIn => IO[Out] = 
+          c => vin => {
             val (path, queries) = builder(vin, Nil, Map())
 
             req(path, queries, c)
@@ -606,7 +617,7 @@ object ScalaIO extends JSApp {
         val client = derive(Api)
 
         // we have to provide a HList
-        client("Gandalf" :: 2019 :: HNil)(c)
+        client(c)("Gandalf" :: 2019 :: HNil)
       """)
     ),
 
@@ -620,8 +631,8 @@ object ScalaIO extends JSApp {
         //                            (El, KIn, VIn, M, Out)]
         //              builder: RequestBuilder[El, KIn, VIn],
         //              req:     ApiRequest[M, IO, C, Out],
-                      vinToFn: FnFromProduct[VIn => C => IO[Out]])
-            : vinToFn.Out = vinToFn { input => c =>
+                      vinToFn: FnFromProduct[VIn => IO[Out]])
+            : C => vinToFn.Out = c => vinToFn { input => 
           val (path, queries) = builder(input, Nil, Map())
 
           req(path, queries, c)
@@ -632,7 +643,7 @@ object ScalaIO extends JSApp {
     slide(
       "Final result",
       scalaC("""
-        val apiT = api(
+        val Api = api(
           method  = Get[List[Users]],
           path    = Root / "users" / Segment[String]("name"),
           queries = Queries add Query[Int]("minAge")
@@ -640,9 +651,54 @@ object ScalaIO extends JSApp {
 
         val client = derive(Api)
 
-        client("Gandalf", 2019)(c)
+        client(c)("Gandalf", 2019)
+      """)
+    )
+  )
+
+  val summary = chapter(
+    chapterSlide(
+      <.h2("Summary")
+    ),
+
+    slide(
+      "Singleton Types",
+      scalaC("""
+        val usersW = Witness("users")
+
+        sealed trait Path[P]
+
+        type Users = Path[usersW.T]
       """)
     ),
+
+    slide(
+      "Implicit recursive resolution",
+      scalaC("""
+        trait TplFolder[H <: HList, Agg] { type Out }
+
+        implicit val finalFolder[Agg] = 
+          new TplFolder[HNil, Agg] { ... }
+
+        implicit val recFolder[H, T <: HList, Agg]
+            (implicit next: TplFolder[T, H]) = 
+          new TplFolder[H :: T, Agg] { ... }
+      """)
+    ),
+
+    slide(
+      "Shameless Plug",
+      <.a(
+        ^.href := "https://github.com/pheymann/typedapi",
+        "https://github.com/pheymann/typedapi"
+      )
+    ),
+
+    noHeaderSlide(
+      <.h3("Thanks"),
+      <.br,
+      <.h3("Questions?")
+    )
   )
 
   val Show = ScalaComponent
@@ -654,7 +710,8 @@ object ScalaIO extends JSApp {
           ^.cls := "slides",
           introduction,
           apiAsAType,
-          deriveHttpClients
+          deriveHttpClients,
+          summary
         )
       )
     )
