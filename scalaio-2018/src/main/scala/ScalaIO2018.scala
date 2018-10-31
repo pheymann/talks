@@ -17,17 +17,8 @@ object ScalaIO extends JSApp {
       <.h1("Let's derive HTTP Clients from Types")
     ),
 
-    noHeaderSlide(
-      <.h3("Type-level programming")
-    ),
-
     slide(
-      "Type-Level Programming",
-      <.p("Use types to describe computations which get evalutated by the compiler.")
-    ),
-
-    slide(
-      "Type-Level Programming: What the compiler has to figure out",
+      "What we'll try to figure out",
       scalaC("""
         // GET /users/:name?minAge=:age -> List[User]
 
@@ -35,6 +26,15 @@ object ScalaIO extends JSApp {
 
         (name: String, minAge: Int) => F[List[User]]
       """)
+    ),
+
+    noHeaderSlide(
+      <.h3("Type-level programming")
+    ),
+
+    slide(
+      "Type-Level Programming",
+      <.p("Use types to describe computations which get evalutated by the compiler.")
     ),
 
     slide(
@@ -70,7 +70,7 @@ object ScalaIO extends JSApp {
       "Me: Paul Heymann",
       Enumeration(
         Item.stable("Data Engineer @ Xing"),
-        Item.fadeIn(
+        Item.stable(
           <.div(
             <.p("Scala Trainer: "),
             <.a(
@@ -79,7 +79,7 @@ object ScalaIO extends JSApp {
             )
           )
         ),
-        Item.fadeIn("unfrequent speaker, a bit of Open Source ")
+        Item.stable("Github: pheymann")
       )
     )
   )
@@ -311,7 +311,7 @@ object ScalaIO extends JSApp {
     chapterSlide(
       <.h2("Derive Clients"),
       <.br,
-      <.p("Recursively derive a client function.")
+      <.p("Recursively derive a client function")
     ),
 
     slide(
@@ -434,7 +434,7 @@ object ScalaIO extends JSApp {
       "Type-Level fold: query",
       scalaC("""
         implicit def queryCase
-            [K <: Symbol, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
+            [K, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
           new TplCase[Query[K, V], (El, KIn, VIn, M, Out)] {
             type Out = (QueryInput :: El, K :: KIn, V :: VIn, M, Out)
           }
@@ -445,7 +445,7 @@ object ScalaIO extends JSApp {
       "Type-Level fold: query",
       scalaC("""
         //implicit def queryCase
-        //    [K <: Symbol, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
+        //    [K, V, El <: HList, KIn <: HList, VIn <: HList, M, Out] =
           new TplCase[Query[K, V], (El, KIn, VIn, M, Out)] {
             type Out = (QueryInput :: El, K :: KIn, V :: VIn, M, Out)
           }
@@ -522,7 +522,7 @@ object ScalaIO extends JSApp {
       "Extract query parameter",
       scalaC("""
         implicit def queryBuilder
-            [K <: Symbol, V, T <: HList, KIn <: HList, VIn <: HList, M, O]
+            [K, V, T <: HList, KIn <: HList, VIn <: HList]
             (implicit wit:  Witness.Aux[K], 
                       next: RequestDataBuilder[T, KIn, VIn]) =
           new RequestDataBuilder[QueryInput :: T, K :: KIn, V :: VIn] {
@@ -543,7 +543,7 @@ object ScalaIO extends JSApp {
       "Extract query parameter",
       scalaC("""
         //implicit def queryBuilder
-        //    [K <: Symbol, V, T <: HList, KIn <: HList, VIn <: HList, M, O]
+        //    [K, V, T <: HList, KIn <: HList, VIn <: HList]
         //    (implicit wit:  Witness.Aux[K], 
         //              next: RequestDataBuilder[T, KIn, VIn]) =
           new RequestDataBuilder[QueryInput :: T, K :: KIn, V :: VIn] {
