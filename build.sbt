@@ -71,12 +71,18 @@ lazy val `meetup-recursion` = project
 
 lazy val `scalaio-2018` = project
  .in(file("scalaio-2018"))
-  .enablePlugins(ScalaJSPlugin)
-  .settings(
-    common,
-    copyFastImpl("scalaio-2018"),
-    copyFullImpl("scalaio-2018"),
-    addCommandAlias("fastCompile", "; fastOptJS; copyFast"),
-    addCommandAlias("fullCompile", "; fullOptJS; copyFull")
-  )
-  .dependsOn(shared)
+ .enablePlugins(ScalaJSPlugin)
+ .settings(
+   common,
+   copyFastImpl("scalaio-2018"),
+   copyFullImpl("scalaio-2018"),
+   addCommandAlias("fastCompile", "; fastOptJS; copyFast"),
+   addCommandAlias("fullCompile", "; fullOptJS; copyFull")
+ )
+ .dependsOn(shared)
+
+lazy val `meetup-category-theory` = project
+ .in(file("meetup-category-theory"))
+ .settings(
+   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
+ )
